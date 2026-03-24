@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minnestest</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0e0e12; --surface: #16161d; --surface2: #1e1e28;
+    --border: #2a2a38; --accent: #6c63ff; --deep-color: #ff9f43;
+    --green: #4ade80; --red: #f87171; --text: #e8e8f0; --muted: #7070a0;
+  }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg); color: var(--text);
+    min-height: 100vh; display: flex; align-items: center;
+    justify-content: center; padding: 20px; overflow-x: hidden;
+  }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(108,99,255,0.12) 0%, transparent 70%);
+    pointer-events: none; z-index: 0;
+  }
+  .screen {
+    display: none; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; padding: 48px 52px; max-width: 680px; width: 100%;
+    position: relative; z-index: 1; animation: fadeIn 0.3s ease;
+  }
+  .screen.active { display: block; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+
+  h1 { font-size: 26px; font-weight: 600; margin-bottom: 14px; color: var(--text); line-height: 1.3; }
+  h2 { font-size: 18px; font-weight: 500; margin-bottom: 12px; color: var(--text); }
+  p { font-size: 15px; line-height: 1.75; color: var(--muted); margin-bottom: 12px; }
+  p strong { color: var(--text); font-weight: 500; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 24px; border-radius: 10px; border: none;
+    font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500;
+    cursor: pointer; transition: all 0.2s; margin: 5px;
+  }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #5753e0; transform: translateY(-1px); }
+  .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost:hover { border-color: var(--muted); }
+  .btn-danger { background: rgba(248,113,113,0.15); color: var(--red); border: 1px solid rgba(248,113,113,0.3); }
+  .btn-yes { background: rgba(74,222,128,0.12); color: var(--green); border: 1px solid rgba(74,222,128,0.3); font-size: 17px; padding: 16px 40px; }
+  .btn-yes:hover { background: rgba(74,222,128,0.2); }
+  .btn-no  { background: rgba(248,113,113,0.12); color: var(--red); border: 1px solid rgba(248,113,113,0.3); font-size: 17px; padding: 16px 40px; }
+  .btn-no:hover  { background: rgba(248,113,113,0.2); }
+  .btn-center { text-align: center; margin-top: 20px; }
+
+  input[type="text"], textarea {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 16px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 15px; outline: none; transition: border-color 0.2s;
+  }
+  input[type="text"]:focus, textarea:focus { border-color: var(--accent); }
+  textarea { min-height: 140px; resize: vertical; line-height: 1.8; margin-top: 10px; }
+  ::placeholder { color: var(--muted); }
+
+  .progress-wrap { background: var(--surface2); border-radius: 100px; height: 5px; margin: 10px 0 30px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 100px; transition: width 0.4s ease; }
+  .pf-shallow { background: var(--accent); }
+  .pf-deep    { background: var(--deep-color); }
+  .pf-neutral { background: var(--muted); }
+
+  .timer-big { font-family: 'DM Mono', monospace; font-size: 52px; font-weight: 500; color: var(--text); text-align: center; margin: 10px 0 20px; letter-spacing: 2px; }
+  .timer-big.warn { color: var(--red); }
+
+  .word-meta { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); text-align: center; margin-bottom: 6px; letter-spacing: 1px; text-transform: uppercase; }
+
+  .enc-bar { height: 3px; background: var(--surface2); border-radius: 100px; margin: 0 0 20px; overflow: hidden; }
+  .enc-fill { height: 100%; border-radius: 100px; }
+  .enc-fill.s { background: var(--accent); }
+  .enc-fill.d { background: var(--deep-color); }
+
+  .stim-word { font-family: 'DM Mono', monospace; font-size: 46px; font-weight: 500; letter-spacing: 3px; color: var(--text); text-transform: uppercase; min-height: 70px; display: flex; align-items: center; justify-content: center; text-align: center; }
+  .fixation  { font-size: 36px; color: var(--muted); text-align: center; padding: 20px 0; min-height: 60px; display: flex; align-items: center; justify-content: center; }
+
+  .options-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 20px 0; }
+  .opt-btn {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px 12px; cursor: pointer; text-align: center;
+    transition: all 0.18s; font-family: 'DM Sans', sans-serif;
+  }
+  .opt-btn:hover { border-color: var(--accent); background: rgba(108,99,255,0.08); transform: translateY(-2px); }
+  .opt-btn.deep-opt:hover { border-color: var(--deep-color); background: rgba(255,159,67,0.08); }
+  .opt-num { font-family: 'DM Mono', monospace; font-size: 20px; font-weight: 500; display: block; margin-bottom: 6px; }
+  .opt-num.s { color: var(--accent); }
+  .opt-num.d { color: var(--deep-color); }
+  .opt-word { font-size: 15px; font-weight: 500; color: var(--text); }
+
+  .recog-word { font-family: 'DM Mono', monospace; font-size: 40px; font-weight: 500; letter-spacing: 3px; color: var(--text); text-align: center; text-transform: uppercase; margin: 30px 0; }
+  .recog-btns { display: flex; gap: 16px; justify-content: center; margin-top: 10px; }
+
+  .city-list { display: flex; flex-wrap: wrap; gap: 6px; min-height: 40px; margin-top: 12px; padding: 10px; background: var(--surface2); border-radius: 10px; border: 1px solid var(--border); max-height: 110px; overflow-y: auto; }
+  .city-tag  { background: rgba(108,99,255,0.15); color: var(--accent); border-radius: 100px; padding: 4px 12px; font-size: 13px; font-family: 'DM Mono', monospace; }
+
+  .res-table { background: var(--surface2); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; margin: 16px 0; max-height: 360px; overflow-y: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th { background: var(--surface); color: var(--muted); font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); position: sticky; top: 0; }
+  tbody td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text); }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: rgba(255,255,255,0.03); }
+
+  details { margin: 8px 0; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  summary { padding: 12px 16px; background: var(--surface2); cursor: pointer; font-weight: 500; font-size: 14px; color: var(--text); list-style: none; display: flex; align-items: center; gap: 8px; }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: '▶'; font-size: 10px; color: var(--muted); transition: transform 0.2s; flex-shrink: 0; }
+  details[open] summary::before { transform: rotate(90deg); }
+  .detail-body { padding: 16px; }
+
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
+  .stat-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .stat-label { font-size: 11px; font-family: 'DM Mono', monospace; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+  .stat-val { font-size: 22px; font-weight: 600; }
+  .stat-val.good { color: var(--green); }
+  .stat-val.warn { color: var(--deep-color); }
+
+  .logo { width: 52px; height: 52px; background: linear-gradient(135deg, var(--accent), var(--deep-color)); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 20px; }
+  .pid-row { display: flex; gap: 10px; margin-top: 16px; }
+  .pid-row input { flex: 1; }
+  kbd { background: var(--surface2); border: 1px solid var(--border); border-radius: 5px; padding: 2px 7px; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text); }
+  #screen-results { max-width: 960px; }
+
+  .recall-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+  .rc-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; }
+  .rc-label { font-size: 11px; font-family: 'DM Mono', monospace; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .rc-val { font-size: 28px; font-weight: 600; }
+  .rc-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .bar-wrap { background: var(--surface); border-radius: 100px; height: 6px; margin-top: 10px; overflow: hidden; }
+  .bar-inner { height: 100%; border-radius: 100px; transition: width 0.8s ease; }
+</style>
+</head>
+<body>
+
+<!-- START -->
+<div class="screen active" id="sc-start">
+  <div class="logo">🧠</div>
+  <h1>Minnestest</h1>
+  <p>Ange deltagarens ID för att starta, eller visa insamlad data.</p>
+  <hr>
+  <div class="pid-row">
+    <input type="text" id="pid-input" placeholder="Deltagar-ID  (t.ex. P001)" />
+    <button class="btn btn-primary" onclick="startExp()">Starta ▶</button>
+  </div>
+  <div style="margin-top:14px;">
+    <button class="btn btn-ghost" onclick="showResults()">📊 Visa resultat</button>
+  </div>
+</div>
+
+<!-- INSTR UPPGIFT 1 -->
+<div class="screen" id="sc-instr-s">
+  <h1>Uppgift 1 – Instruktioner</h1>
+  <p>Du kommer att se ett <strong>ord</strong> i mitten av skärmen, tillsammans med tre alternativ numrerade 1, 2 och 3.</p>
+  <p>Ett av de tre alternativen är <strong>exakt samma ord</strong> som det du ser i mitten. Din uppgift är att hitta vilket nummer det är och trycka på <kbd>1</kbd>, <kbd>2</kbd> eller <kbd>3</kbd> — eller klicka på knappen.</p>
+  <p>Varje ord visas i <strong>3 sekunder</strong>. Svara så snabbt och korrekt du kan. Det är <strong>12 ord</strong> totalt.</p>
+  <div class="btn-center"><button class="btn btn-primary" onclick="startShallow()">Börja ▶</button></div>
+</div>
+
+<!-- UPPGIFT 1 TRIAL -->
+<div class="screen" id="sc-shallow">
+  <div class="word-meta" id="s-ctr">ORD 1 AV 12</div>
+  <div class="enc-bar"><div class="enc-fill s" id="s-bar" style="width:100%"></div></div>
+  <div class="stim-word" id="s-stim"></div>
+  <div class="fixation" id="s-fix" style="display:none">+</div>
+  <div class="options-grid" id="s-opts"></div>
+</div>
+
+<!-- MELLANTASK 1 -->
+<div class="screen" id="sc-dist1">
+  <h1>Ny uppgift</h1>
+  <p>Skriv ner så många <strong>europeiska städer</strong> du kan komma på under 2 minuter. Tryck <kbd>Enter</kbd> efter varje stad.</p>
+  <div class="timer-big" id="d1-timer">2:00</div>
+  <div class="progress-wrap"><div class="progress-fill pf-neutral" id="d1-bar" style="width:100%"></div></div>
+  <input type="text" id="d1-input" placeholder="Stad + Enter..." autocomplete="off"/>
+  <div class="city-list" id="d1-cities"></div>
+  <div style="margin-top:14px;"><button class="btn btn-ghost" onclick="endDist(1)">Hoppa över →</button></div>
+</div>
+
+<!-- RECALL 1 INSTR -->
+<div class="screen" id="sc-rec1-instr">
+  <h1>Minnestest</h1>
+  <p>Försök nu komma ihåg <strong>så många av de ord du nyss såg som möjligt</strong>. Ordningen spelar ingen roll.</p>
+  <p>Du kan skriva ett ord per rad, eller flera ord på samma rad separerade med komma (t.ex. <em>moln, krita, lykta</em>).</p>
+  <p>Du har <strong>2 minuter</strong> på dig.</p>
+  <div class="btn-center"><button class="btn btn-primary" onclick="startRecall(1)">Starta timer ▶</button></div>
+</div>
+
+<!-- RECALL 1 -->
+<div class="screen" id="sc-rec1">
+  <div class="timer-big" id="r1-timer">2:00</div>
+  <div class="progress-wrap"><div class="progress-fill pf-shallow" id="r1-bar" style="width:100%"></div></div>
+  <textarea id="r1-text" placeholder="Skriv orden du minns, ett per rad…"></textarea>
+  <div style="margin-top:12px;text-align:right;"><button class="btn btn-ghost" onclick="endRecall(1)">Klar →</button></div>
+</div>
+
+<!-- RECOG 1 INSTR -->
+<div class="screen" id="sc-rog1-instr">
+  <h1>Igenkänning</h1>
+  <p>Du ser nu ord ett i taget. För varje ord ska du svara <strong>JA</strong> om du tror att det förekom i den förra uppgiften, eller <strong>NEJ</strong> om det inte gjorde det.</p>
+  <p>Svara snabbt och lita på din första känsla. Tryck <kbd>J</kbd> för ja och <kbd>N</kbd> för nej, eller klicka på knapparna.</p>
+  <div class="btn-center"><button class="btn btn-primary" onclick="startRecog(1)">Starta ▶</button></div>
+</div>
+
+<!-- RECOG 1 -->
+<div class="screen" id="sc-rog1">
+  <div class="word-meta" id="ro1-ctr">ORD 1 AV 24</div>
+  <div class="progress-wrap"><div class="progress-fill pf-shallow" id="ro1-bar" style="width:0%"></div></div>
+  <div class="recog-word" id="ro1-word">—</div>
+  <div class="recog-btns">
+    <button class="btn btn-yes" onclick="respRecog(1,true)">✓ JA</button>
+    <button class="btn btn-no"  onclick="respRecog(1,false)">✗ NEJ</button>
+  </div>
+  <p style="text-align:center;margin-top:16px;font-size:13px;"><kbd>J</kbd> = Ja &nbsp; <kbd>N</kbd> = Nej</p>
+</div>
+
+<!-- INSTR UPPGIFT 2 -->
+<div class="screen" id="sc-instr-d">
+  <h1>Uppgift 2 – Instruktioner</h1>
+  <p>Nu kommer en ny omgång med ord. Den här gången visas ett ord i mitten och tre <strong>kategorier</strong> numrerade 1, 2 och 3.</p>
+  <p>Din uppgift är att välja <strong>vilken kategori ordet hör till</strong>. Tryck på <kbd>1</kbd>, <kbd>2</kbd> eller <kbd>3</kbd> — eller klicka.</p>
+  <p><strong>Exempel:</strong> Ordet KANIN visas med alternativen 1: Djur &nbsp; 2: Verktyg &nbsp; 3: Dryck → tryck <kbd>1</kbd> eftersom kanin är ett djur.</p>
+  <p>3 sekunder per ord. 12 ord totalt.</p>
+  <div class="btn-center"><button class="btn btn-primary" onclick="startDeep()">Börja ▶</button></div>
+</div>
+
+<!-- UPPGIFT 2 TRIAL -->
+<div class="screen" id="sc-deep">
+  <div class="word-meta" id="d-ctr">ORD 1 AV 12</div>
+  <div class="enc-bar"><div class="enc-fill d" id="d-bar" style="width:100%"></div></div>
+  <div class="stim-word" id="d-stim"></div>
+  <div class="fixation" id="d-fix" style="display:none">+</div>
+  <div class="options-grid" id="d-opts"></div>
+</div>
+
+<!-- MELLANTASK 2 -->
+<div class="screen" id="sc-dist2">
+  <h1>Ny uppgift</h1>
+  <p>Skriv ner så många <strong>djur</strong> du kan komma på under 2 minuter. Tryck <kbd>Enter</kbd> efter varje djur.</p>
+  <div class="timer-big" id="d2-timer">2:00</div>
+  <div class="progress-wrap"><div class="progress-fill pf-neutral" id="d2-bar" style="width:100%"></div></div>
+  <input type="text" id="d2-input" placeholder="Djur + Enter..." autocomplete="off"/>
+  <div class="city-list" id="d2-cities"></div>
+  <div style="margin-top:14px;"><button class="btn btn-ghost" onclick="endDist(2)">Hoppa över →</button></div>
+</div>
+
+<!-- RECALL 2 INSTR -->
+<div class="screen" id="sc-rec2-instr">
+  <h1>Minnestest</h1>
+  <p>Försök nu komma ihåg <strong>så många av de ord du nyss såg som möjligt</strong>. Ordningen spelar ingen roll.</p>
+  <p>Du kan skriva ett ord per rad, eller flera ord på samma rad separerade med komma (t.ex. <em>mossa, sked, fiol</em>).</p>
+  <p>Du har <strong>2 minuter</strong> på dig.</p>
+  <div class="btn-center"><button class="btn btn-primary" onclick="startRecall(2)">Starta timer ▶</button></div>
+</div>
+
+<!-- RECALL 2 -->
+<div class="screen" id="sc-rec2">
+  <div class="timer-big" id="r2-timer">2:00</div>
+  <div class="progress-wrap"><div class="progress-fill pf-deep" id="r2-bar" style="width:100%"></div></div>
+  <textarea id="r2-text" placeholder="Skriv orden du minns, ett per rad…"></textarea>
+  <div style="margin-top:12px;text-align:right;"><button class="btn btn-ghost" onclick="endRecall(2)">Klar →</button></div>
+</div>
+
+<!-- RECOG 2 INSTR -->
+<div class="screen" id="sc-rog2-instr">
+  <h1>Igenkänning</h1>
+  <p>Svara <strong>JA</strong> om du tror att ordet förekom i den förra uppgiften, eller <strong>NEJ</strong> om det inte gjorde det.</p>
+  <p>Tryck <kbd>J</kbd> för ja och <kbd>N</kbd> för nej, eller klicka.</p>
+  <div class="btn-center"><button class="btn btn-primary" onclick="startRecog(2)">Starta ▶</button></div>
+</div>
+
+<!-- RECOG 2 -->
+<div class="screen" id="sc-rog2">
+  <div class="word-meta" id="ro2-ctr">ORD 1 AV 24</div>
+  <div class="progress-wrap"><div class="progress-fill pf-deep" id="ro2-bar" style="width:0%"></div></div>
+  <div class="recog-word" id="ro2-word">—</div>
+  <div class="recog-btns">
+    <button class="btn btn-yes" onclick="respRecog(2,true)">✓ JA</button>
+    <button class="btn btn-no"  onclick="respRecog(2,false)">✗ NEJ</button>
+  </div>
+  <p style="text-align:center;margin-top:16px;font-size:13px;"><kbd>J</kbd> = Ja &nbsp; <kbd>N</kbd> = Nej</p>
+</div>
+
+<!-- DONE -->
+<div class="screen" id="sc-done">
+  <h1 style="font-size:32px;">Tack för din medverkan! 🎉</h1>
+  <p>Experimentet är avslutat. Dina svar har sparats lokalt.</p>
+  <div id="send-status" style="margin:18px 0;padding:14px 18px;border-radius:12px;font-size:14px;font-weight:500;background:var(--surface2);border:1px solid var(--border);color:var(--muted);display:flex;align-items:center;gap:10px;">
+    <span id="send-icon">⏳</span>
+    <span id="send-msg">Skickar resultat till Google Sheets…</span>
+  </div>
+  <hr>
+  <button class="btn btn-primary" onclick="sendToSheets(true)">↺ Skicka igen</button>
+  <button class="btn btn-ghost" onclick="showResults()">📊 Visa alla resultat</button>
+  <button class="btn btn-ghost" onclick="newPart()">👤 Ny deltagare</button>
+</div>
+
+<!-- RESULTS -->
+<div class="screen" id="screen-results">
+  <h1>📊 Resultat</h1>
+  <div id="results-content"></div>
+  <hr>
+  <button class="btn btn-primary" onclick="exportCSV()">⬇ Exportera CSV</button>
+  <button class="btn btn-ghost" onclick="newPart()">← Tillbaka</button>
+  <button class="btn btn-danger" onclick="clearAll()">🗑 Rensa all data</button>
+</div>
+
+<script>
+/* ============================================================
+   STIMULUS DATA
+   ============================================================ */
+const SW = [
+  {word:"Diabetes",  opts:["Diabetes","Förare","Vapen"],    c:1},
+  {word:"Volleyboll",opts:["Fysik","Volleyboll","Pengar"],  c:2},
+  {word:"Ros",       opts:["Dans","Bord","Ros"],            c:3},
+  {word:"Byxor",     opts:["Soffa","Cola","Byxor"],         c:3},
+  {word:"Sara",      opts:["Fågel","Sara","Sallad"],        c:2},
+  {word:"Myra",      opts:["Skepp","Myra","Penna"],         c:2},
+  {word:"Disk",      opts:["Järn","Lampa","Disk"],          c:3},
+  {word:"Far",       opts:["Far","Lärare","Officer"],       c:1},
+  {word:"Banan",     opts:["Röd","Banan","Papper"],         c:2},
+  {word:"Hand",      opts:["Hand","Leksak","Ring"],         c:1},
+  {word:"Spanien",   opts:["Stat","Byggnad","Spanien"],     c:3},
+  {word:"Tiger",     opts:["Tiger","Tid","Pojke"],          c:1}
+];
+const DW = [
+  {word:"Lejon",   opts:["Djur","Stad","Pojknamn"],                  c:1},
+  {word:"Tulpan",  opts:["Träd","Grönsak","Blomma"],                 c:3},
+  {word:"Maria",   opts:["Fågel","Tjejnamn","Frukt"],                c:2},
+  {word:"Bi",      opts:["Fisk","Insekt","Orm"],                     c:2},
+  {word:"Sked",    opts:["Köksredskap","Musikinstrument","Metall"],  c:1},
+  {word:"Morbror", opts:["Universitetsanställd","Soldat","Släkting"],c:3},
+  {word:"Äpple",   opts:["Färg","Frukt","Land"],                     c:2},
+  {word:"Finger",  opts:["Kroppsdel","Leksak","Idrott"],             c:1},
+  {word:"Rock",    opts:["Möbel","Dryck","Klädplagg"],               c:3},
+  {word:"Cancer",  opts:["Sjukdom","Arbete","Vapen"],                c:1},
+  {word:"Italien", opts:["Stat","Byggnad","Land"],                   c:3},
+  {word:"Fotboll", opts:["Vetenskap","Idrott","Pengar"],             c:2}
+];
+const SD = ["Förare","Fysik","Dans","Soffa","Fågel","Skepp","Järn","Lärare","Röd","Leksak","Stat","Tid"];
+const DD = ["Stad","Träd","Fågel","Fisk","Musikinstrument","Universitetsanställd","Färg","Leksak","Möbel","Arbete","Byggnad","Vetenskap"];
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let pid='', pData={};
+let encTO=null, activeIv=null, keyFn=null;
+let encIdx=0, encWords=[], encResps=[];
+let encDone=null;
+let distItems=[];
+let rogList=[], rogIdx=0, rogResps=[], rogT0=0, rogDone=null;
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbzrplNzQVdodT_KJ3Zjz3xc0_lLOqqF52a7kGy2nwthAfJJmiNVm5ucC-IpzX0RFtN6/exec';
+
+function setSendStatus(icon, msg, color) {
+  const box = document.getElementById('send-status');
+  if (!box) return;
+  document.getElementById('send-icon').textContent = icon;
+  document.getElementById('send-msg').textContent = msg;
+  box.style.color = color || 'var(--muted)';
+  box.style.borderColor = color || 'var(--border)';
+}
+
+async function sendToSheets(manual = false) {
+  if (!pid || !pData || !pData.id) {
+    if (manual) alert('Ingen deltagardata att skicka.');
+    return;
+  }
+
+  setSendStatus('⏳', 'Skickar resultat till Google Sheets…', 'var(--muted)');
+
+  const payload = {
+    participantId: pData.id,
+    sentAt: new Date().toISOString(),
+    appVersion: 'minnestest-v3',
+    data: pData
+  };
+
+  try {
+    // no-cors fetch: browser sends the request, CORS response is opaque (unreadable)
+    // but GAS receives the POST body and can write to Sheets.
+    // Content-Type must stay text/plain to avoid a CORS preflight that GAS can't answer.
+    await fetch(SHEETS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
+    });
+
+    // We can't read the response (opaque), but if fetch didn't throw the request reached GAS.
+    setSendStatus('✅', 'Resultat skickat! Kontrollera Google Sheet.', 'var(--green)');
+    pData.sentToSheets = true;
+    pData.sentToSheetsAt = new Date().toLocaleString('sv-SE');
+    save();
+  } catch (err) {
+    console.error('sendToSheets error:', err);
+    setSendStatus('❌', 'Sändningen misslyckades. Kontrollera nätverket och försök igen.', 'var(--red)');
+    pData.sentToSheets = false;
+    save();
+  }
+}
+
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+const $=id=>document.getElementById(id);
+function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); $(id).classList.add('active'); window.scrollTo(0,0); }
+function shuf(a){ const b=[...a]; for(let i=b.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]; } return b; }
+function fmt(s){ return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; }
+function stopIv(){ if(activeIv){ clearInterval(activeIv); activeIv=null; } }
+function setKey(fn){ if(keyFn) document.removeEventListener('keydown',keyFn); keyFn=fn; if(fn) document.addEventListener('keydown',fn); }
+function save(){ try{ const a=JSON.parse(localStorage.getItem('lop')||'{}'); a[pid]=pData; localStorage.setItem('lop',JSON.stringify(a)); }catch(e){} }
+
+/* Parse words — accepts newlines OR commas as separators, fixes multi-word-on-one-line */
+function parseWords(raw){
+  return raw.split(/[\n,]+/).map(w=>w.trim().toLowerCase()).filter(Boolean);
+}
+
+/* ============================================================
+   START
+   ============================================================ */
+function startExp(){
+  pid=$('pid-input').value.trim();
+  if(!pid){alert('Ange ett deltagar-ID!');return;}
+  pData={id:pid,date:new Date().toLocaleDateString('sv-SE'),time:new Date().toLocaleTimeString('sv-SE'),shallow:{},deep:{},sentToSheets:false};
+  setKey(null); show('sc-instr-s');
+}
+function newPart(){ stopIv(); setKey(null); clearTimeout(encTO); $('pid-input').value=''; show('sc-start'); }
+
+/* ============================================================
+   ENCODING ENGINE
+   ============================================================ */
+function runEnc(words, stimId, optsId, fixId, ctrId, barId, isDeep, onResp, onAllDone){
+  encWords=words; encIdx=0; encResps=[]; encDone=onAllDone;
+  function next(){
+    if(encIdx>=encWords.length){ onAllDone(encResps); return; }
+    const t=encWords[encIdx], total=encWords.length;
+    $(ctrId).textContent=`ORD ${encIdx+1} AV ${total}`;
+    $(stimId).textContent=t.word; $(stimId).style.display='flex'; $(fixId).style.display='none';
+    const od=$(optsId); od.innerHTML=''; od.style.display='grid';
+    t.opts.forEach((o,i)=>{
+      const b=document.createElement('button');
+      b.className='opt-btn'+(isDeep?' deep-opt':'');
+      b.innerHTML=`<span class="opt-num ${isDeep?'d':'s'}">${i+1}</span><span class="opt-word">${o}</span>`;
+      b.onclick=()=>respond(i+1);
+      od.appendChild(b);
+    });
+    const bar=$(barId);
+    bar.style.transition='none'; bar.style.width='100%';
+    setTimeout(()=>{ bar.style.transition='width 3s linear'; bar.style.width='0%'; },30);
+    let done=false;
+    function respond(chosen){
+      if(done)return; done=true; clearTimeout(encTO); setKey(null);
+      const rt=chosen?+((Date.now()-t0)/1000).toFixed(3):null;
+      encResps.push({word:t.word,chosen,correct:t.c,isCorrect:chosen===t.c,rt});
+      if(onResp) onResp(encResps[encResps.length-1]);
+      // Disable buttons visually but keep word visible until 3s are up
+      od.querySelectorAll('.opt-btn').forEach(b=>{ b.style.pointerEvents='none'; b.style.opacity='0.4'; });
+      if(chosen){ od.querySelectorAll('.opt-btn')[chosen-1].style.opacity='1'; }
+      const elapsed=Date.now()-t0;
+      const remaining=Math.max(0, 3000-elapsed);
+      setTimeout(()=>{
+        od.style.display='none'; $(stimId).style.display='none'; $(fixId).style.display='flex';
+        bar.style.transition='none'; bar.style.width='0%';
+        encIdx++;
+        setTimeout(next, 2000);
+      }, remaining);
+    }
+    const t0=Date.now();
+    setKey(e=>{ if(['1','2','3'].includes(e.key)) respond(parseInt(e.key)); });
+    encTO=setTimeout(()=>respond(null),3000);
+  }
+  next();
+}
+
+/* ============================================================
+   SHALLOW (Uppgift 1)
+   ============================================================ */
+function startShallow(){
+  show('sc-shallow');
+  runEnc(SW,'s-stim','s-opts','s-fix','s-ctr','s-bar',false,null,resps=>{
+    pData.shallow.enc=resps; save();
+    distItems=[]; show('sc-dist1'); startDistTimer(1);
+  });
+}
+
+/* ============================================================
+   DEEP (Uppgift 2)
+   ============================================================ */
+function startDeep(){
+  show('sc-deep');
+  runEnc(DW,'d-stim','d-opts','d-fix','d-ctr','d-bar',true,null,resps=>{
+    pData.deep.enc=resps; save();
+    distItems=[]; show('sc-dist2'); startDistTimer(2);
+  });
+}
+
+/* ============================================================
+   MELLANTASK (Distraktion)
+   ============================================================ */
+function startDistTimer(n){
+  const tid=`d${n}-timer`, bid=`d${n}-bar`, iid=`d${n}-input`, cid=`d${n}-cities`;
+  distItems=[];
+  $(cid).innerHTML=''; $(iid).value='';
+  let t=120;
+  $(tid).textContent=fmt(t); $(tid).className='timer-big';
+  $(bid).style.width='100%';
+  const inp=$(iid);
+  inp.onkeydown=e=>{ if(e.key==='Enter'){ const v=inp.value.trim(); if(v){ distItems.push(v); const tag=document.createElement('span'); tag.className='city-tag'; tag.textContent=v; $(cid).appendChild(tag); inp.value=''; $(cid).scrollTop=9999; } } };
+  stopIv();
+  activeIv=setInterval(()=>{
+    t--;
+    $(tid).textContent=fmt(t);
+    if(t<=30) $(tid).className='timer-big warn';
+    $(bid).style.width=`${(t/120)*100}%`;
+    if(t<=0){ stopIv(); endDist(n); }
+  },1000);
+  setTimeout(()=>inp.focus(),50);
+}
+
+function endDist(n){
+  stopIv();
+  if(n===1){ pData.shallow.distItems=[...distItems]; save(); show('sc-rec1-instr'); }
+  else      { pData.deep.distItems=[...distItems];   save(); show('sc-rec2-instr'); }
+}
+
+/* ============================================================
+   RECALL
+   ============================================================ */
+function startRecall(n){
+  const sc=n===1?'sc-rec1':'sc-rec2';
+  const tid=`r${n}-timer`, bid=`r${n}-bar`, txid=`r${n}-text`;
+  show(sc); $(txid).value='';
+  let t=120;
+  $(tid).textContent=fmt(t); $(tid).className='timer-big';
+  $(bid).style.width='100%';
+  stopIv();
+  activeIv=setInterval(()=>{
+    t--;
+    $(tid).textContent=fmt(t);
+    if(t<=30) $(tid).className='timer-big warn';
+    $(bid).style.width=`${(t/120)*100}%`;
+    if(t<=0){ stopIv(); endRecall(n); }
+  },1000);
+  setTimeout(()=>$(txid).focus(),50);
+}
+
+function endRecall(n){
+  stopIv();
+  const txid=`r${n}-text`;
+  const raw=$(txid).value;
+  // Split by newline OR comma — handles both "ett ord per rad" and "ord1, ord2, ord3"
+  const words=parseWords(raw);
+  const tgts=(n===1?SW:DW).map(w=>w.word.toLowerCase());
+  const hits=words.filter(w=>tgts.includes(w)).length;
+  const obj={raw,words,hits,total:12};
+  if(n===1){ pData.shallow.recall=obj; save(); show('sc-rog1-instr'); }
+  else      { pData.deep.recall=obj;   save(); show('sc-rog2-instr'); }
+}
+
+/* ============================================================
+   RECOGNITION
+   ============================================================ */
+function startRecog(n){
+  const tgts=(n===1?SW:DW).map(w=>({word:w.word,isTarget:true}));
+  const dist=(n===1?SD:DD).map(w=>({word:w,isTarget:false}));
+  rogList=shuf([...tgts,...dist]); rogIdx=0; rogResps=[];
+  const sc=n===1?'sc-rog1':'sc-rog2';
+  show(sc);
+  rogDone=async resps=>{
+    const hits=resps.filter(r=>r.isTarget&&r.response).length;
+    const fa=resps.filter(r=>!r.isTarget&&r.response).length;
+    if(n===1){
+      pData.shallow.recog=resps;
+      pData.shallow.recogScore={hits,fa,total:12};
+      save();
+      show('sc-instr-d');
+    } else {
+      pData.deep.recog=resps;
+      pData.deep.recogScore={hits,fa,total:12};
+      save();
+      show('sc-done');
+      // Auto-send after a short delay so the done screen renders first
+      setTimeout(() => sendToSheets(), 300);
+    }
+    setKey(null);
+  };
+  showRogTrial(n);
+  setKey(e=>{ if(/^[jJ]$/.test(e.key)) respRecog(n,true); if(/^[nN]$/.test(e.key)) respRecog(n,false); });
+}
+
+function showRogTrial(n){
+  if(rogIdx>=rogList.length){ rogDone(rogResps); return; }
+  const wid=`ro${n}-word`, cid=`ro${n}-ctr`, bid=`ro${n}-bar`;
+  $(cid).textContent=`ORD ${rogIdx+1} AV ${rogList.length}`;
+  $(bid).style.width=`${(rogIdx/rogList.length)*100}%`;
+  $(wid).textContent=rogList[rogIdx].word;
+  rogT0=Date.now();
+}
+
+function respRecog(n,resp){
+  if(rogIdx>=rogList.length) return;
+  const item=rogList[rogIdx];
+  const rt=+((Date.now()-rogT0)/1000).toFixed(3);
+  rogResps.push({word:item.word,isTarget:item.isTarget,response:resp,correct:item.isTarget===resp,rt});
+  rogIdx++;
+  showRogTrial(n);
+}
+
+/* ============================================================
+   RESULTS
+   ============================================================ */
+function showResults(){
+  stopIv(); setKey(null);
+  const all=JSON.parse(localStorage.getItem('lop')||'{}');
+  const ps=Object.values(all);
+  let html='';
+
+  if(!ps.length){
+    html='<p style="text-align:center;padding:30px 0;color:var(--muted)">Ingen data insamlad ännu.</p>';
+  } else {
+    html+=`<p style="margin-bottom:8px;font-size:13px;color:var(--muted)">${ps.length} deltagare registrerade</p>`;
+    // Summary table — no encoding accuracy, no percentages
+    html+=`<div class="res-table"><table>
+      <thead><tr>
+        <th>ID</th><th>Datum</th>
+        <th>Matchning Uppg. 1</th><th>Återkallelse Uppg. 1</th><th>Igenkänning Uppg. 1 (Hits / FA)</th>
+        <th>Matchning Uppg. 2</th><th>Återkallelse Uppg. 2</th><th>Igenkänning Uppg. 2 (Hits / FA)</th>
+      </tr></thead><tbody>`;
+    ps.forEach(p=>{
+      const se=p.shallow.enc, seTxt=se?`${se.filter(r=>r.isCorrect).length}/12`:'–';
+      const sr=p.shallow.recall, srTxt=sr!=null?`${sr.hits}/12`:'–';
+      const ss=p.shallow.recogScore, ssTxt=ss?`${ss.hits} / FA:${ss.fa}`:'–';
+      const de=p.deep.enc, deTxt=de?`${de.filter(r=>r.isCorrect).length}/12`:'–';
+      const dr=p.deep.recall, drTxt=dr!=null?`${dr.hits}/12`:'–';
+      const ds=p.deep.recogScore, dsTxt=ds?`${ds.hits} / FA:${ds.fa}`:'–';
+      html+=`<tr>
+        <td><strong>${p.id}</strong></td>
+        <td style="color:var(--muted)">${p.date}</td>
+        <td style="font-family:'DM Mono',monospace">${seTxt}</td>
+        <td style="font-family:'DM Mono',monospace">${srTxt}</td>
+        <td>${ssTxt}</td>
+        <td style="font-family:'DM Mono',monospace">${deTxt}</td>
+        <td style="font-family:'DM Mono',monospace">${drTxt}</td>
+        <td>${dsTxt}</td>
+      </tr>`;
+    });
+    html+='</tbody></table></div>';
+
+    html+='<h2 style="margin:28px 0 12px;font-size:15px;">Detaljer per deltagare</h2>';
+    ps.forEach(p=>{
+      const sr=p.shallow.recall, dr=p.deep.recall;
+      const srHits=sr?sr.hits:0, drHits=dr?dr.hits:0;
+      html+=`<details><summary>
+        <span style="font-family:'DM Mono',monospace;color:var(--accent)">${p.id}</span>
+        &nbsp;·&nbsp;${p.date} ${p.time||''}
+        &nbsp;·&nbsp; Uppg1: ${sr?srHits+'/12':'–'} &nbsp; Uppg2: ${dr?drHits+'/12':'–'}
+      </summary><div class="detail-body">`;
+
+      // Encoding match cards
+      const se=p.shallow.enc, de=p.deep.enc;
+      if(se||de){
+        const seOk=se?se.filter(r=>r.isCorrect).length:0;
+        const deOk=de?de.filter(r=>r.isCorrect).length:0;
+        html+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:18px 20px">
+            <div style="font-size:11px;font-family:'DM Mono',monospace;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Matchning – Uppgift 1</div>
+            <div style="font-size:28px;font-weight:600;color:var(--accent)">${se?seOk+'/12':'–'}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px">${se?seOk+' av 12 rätt matchade':'Ej genomförd'}</div>
+            <div style="background:var(--surface);border-radius:100px;height:6px;margin-top:10px;overflow:hidden"><div style="width:${se?(seOk/12*100):0}%;height:100%;border-radius:100px;background:var(--accent)"></div></div>
+          </div>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:18px 20px">
+            <div style="font-size:11px;font-family:'DM Mono',monospace;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Matchning – Uppgift 2</div>
+            <div style="font-size:28px;font-weight:600;color:var(--deep-color)">${de?deOk+'/12':'–'}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px">${de?deOk+' av 12 rätt matchade':'Ej genomförd'}</div>
+            <div style="background:var(--surface);border-radius:100px;height:6px;margin-top:10px;overflow:hidden"><div style="width:${de?(deOk/12*100):0}%;height:100%;border-radius:100px;background:var(--deep-color)"></div></div>
+          </div>
+        </div>`;
+      }
+
+      // Recall score cards
+      if(sr||dr){
+        html+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:18px 20px">
+            <div style="font-size:11px;font-family:'DM Mono',monospace;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Återkallelse – Uppgift 1</div>
+            <div style="font-size:28px;font-weight:600;color:var(--accent)">${sr?sr.hits+'/12':'–'}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px">${sr?sr.hits+' av 12 rätt ord':'Ej genomförd'}</div>
+            <div style="background:var(--surface);border-radius:100px;height:6px;margin-top:10px;overflow:hidden"><div style="width:${sr?(sr.hits/12*100):0}%;height:100%;border-radius:100px;background:var(--accent)"></div></div>
+          </div>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:18px 20px">
+            <div style="font-size:11px;font-family:'DM Mono',monospace;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Återkallelse – Uppgift 2</div>
+            <div style="font-size:28px;font-weight:600;color:var(--deep-color)">${dr?dr.hits+'/12':'–'}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px">${dr?dr.hits+' av 12 rätt ord':'Ej genomförd'}</div>
+            <div style="background:var(--surface);border-radius:100px;height:6px;margin-top:10px;overflow:hidden"><div style="width:${dr?(dr.hits/12*100):0}%;height:100%;border-radius:100px;background:var(--deep-color)"></div></div>
+          </div>
+        </div>`;
+      }
+
+      // Raw recall text
+      if(sr){
+        html+=`<h2 style="margin:12px 0 6px;font-size:13px;color:var(--muted)">Inskrivna ord – Uppgift 1</h2>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;font-family:'DM Mono',monospace;font-size:13px;color:var(--muted);white-space:pre-wrap;max-height:80px;overflow:auto">${sr.raw||'(tomt)'}</div>`;
+      }
+      if(dr){
+        html+=`<h2 style="margin:12px 0 6px;font-size:13px;color:var(--muted)">Inskrivna ord – Uppgift 2</h2>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;font-family:'DM Mono',monospace;font-size:13px;color:var(--muted);white-space:pre-wrap;max-height:80px;overflow:auto">${dr.raw||'(tomt)'}</div>`;
+      }
+
+      // Recognition scores
+      const ss=p.shallow.recogScore, ds=p.deep.recogScore;
+      if(ss||ds){
+        html+=`<div class="stat-grid" style="margin:14px 0 4px">`;
+        if(ss){
+          html+=`<div class="stat-card"><div class="stat-label">Igenkänning Uppg.1 – Träffar</div><div class="stat-val good">${ss.hits}/12</div></div>
+                 <div class="stat-card"><div class="stat-label">Igenkänning Uppg.1 – Falsklarm</div><div class="stat-val warn">${ss.fa}/12</div></div>`;
+        }
+        if(ds){
+          html+=`<div class="stat-card"><div class="stat-label">Igenkänning Uppg.2 – Träffar</div><div class="stat-val good">${ds.hits}/12</div></div>
+                 <div class="stat-card"><div class="stat-label">Igenkänning Uppg.2 – Falsklarm</div><div class="stat-val warn">${ds.fa}/12</div></div>`;
+        }
+        html+=`</div>`;
+      }
+
+      html+='</div></details>';
+    });
+  }
+  $('results-content').innerHTML=html;
+  show('screen-results');
+}
+
+/* ============================================================
+   CSV EXPORT
+   ============================================================ */
+function exportCSV(){
+  const all=JSON.parse(localStorage.getItem('lop')||'{}');
+  const rows=['ID,Datum,Fas,Uppgift,Ord,Valt_svar,Korrekt_svar,Korrekt_0_1,RT_s'];
+  Object.values(all).forEach(p=>{
+    const add=(fas,upg,word,chosen,correct,ok,rt)=>rows.push([p.id,p.date,fas,upg,word,chosen??'',correct??'',ok?1:0,rt??''].join(','));
+    (p.shallow.enc||[]).forEach(r=>add('Kodning','Uppgift_1',r.word,r.chosen,r.correct,r.isCorrect,r.rt));
+    (p.deep.enc||[]).forEach(r=>add('Kodning','Uppgift_2',r.word,r.chosen,r.correct,r.isCorrect,r.rt));
+    if(p.shallow.recall){ const tgts=SW.map(w=>w.word.toLowerCase()); (p.shallow.recall.words||[]).forEach(w=>add('Återkallning','Uppgift_1',w,'','',tgts.includes(w),'')); }
+    if(p.deep.recall)   { const tgts=DW.map(w=>w.word.toLowerCase()); (p.deep.recall.words||[]).forEach(w=>add('Återkallning','Uppgift_2',  w,'','',tgts.includes(w),'')); }
+    (p.shallow.recog||[]).forEach(r=>add('Igenkänning','Uppgift_1',r.word,r.response?'JA':'NEJ',r.isTarget?'mål':'distraktor',r.correct,r.rt));
+    (p.deep.recog||[]).forEach(r=>add('Igenkänning','Uppgift_2',r.word,r.response?'JA':'NEJ',r.isTarget?'mål':'distraktor',r.correct,r.rt));
+  });
+  const blob=new Blob(['\uFEFF'+rows.join('\n')],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`Minnestest_data_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+}
+
+function clearAll(){
+  if(confirm('Radera ALL insamlad data? Detta kan inte ångras.')){ localStorage.removeItem('lop'); showResults(); }
+}
+
+$('pid-input').addEventListener('keydown',e=>{ if(e.key==='Enter') startExp(); });
+</script>
+</body>
+</html>
